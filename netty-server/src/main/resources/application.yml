@@ -1,0 +1,5 @@
+server:
+  port: 8082
+
+netty:
+  port: 9092
