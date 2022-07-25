@@ -1,6 +1,7 @@
 package com.andon.nettyserver.socket;
 
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
@@ -11,6 +12,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
+
+import javax.annotation.PreDestroy;
 
 /**
  * @author Andon
@@ -23,6 +26,12 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class NettyServer implements CommandLineRunner {
 
+    private Channel channel;
+    // boss事件轮询线程组，处理连接事件
+    private final EventLoopGroup bossGroup = new NioEventLoopGroup();
+    // worker事件轮询线程组，用于数据处理
+    private final EventLoopGroup workerGroup = new NioEventLoopGroup();
+
     private final NettyServerInitializer nettyServerInitializer;
 
     @Value("${netty.port}")
@@ -33,10 +42,6 @@ public class NettyServer implements CommandLineRunner {
      */
     @Override
     public void run(String... args) {
-        // boss事件轮询线程组，处理连接事件
-        EventLoopGroup bossGroup = new NioEventLoopGroup();
-        // worker事件轮询线程组，用于数据处理
-        EventLoopGroup workerGroup = new NioEventLoopGroup();
         try {
             // 启动类
             ServerBootstrap serverBootstrap = new ServerBootstrap();
@@ -54,18 +59,22 @@ public class NettyServer implements CommandLineRunner {
                     .childHandler(nettyServerInitializer);
             // 绑定端口，开始接收进来的连接
             ChannelFuture future = serverBootstrap.bind(port).sync();
-            // 应用程序会一直等待，直到channel关闭
-            future.channel().closeFuture().sync();
             if (future.isSuccess()) {
                 log.info("Netty服务端启动!! 端口:[{}]", port);
             }
+            channel = future.channel();
         } catch (Exception e) {
             log.error("Netty服务端启动异常!! error:{}", e.getMessage());
-        } finally {
-            // 关闭服务端，释放线程资源
-            workerGroup.shutdownGracefully();
-            bossGroup.shutdownGracefully();
-            log.warn("Netty服务关闭!!");
         }
+    }
+
+    @PreDestroy
+    public void destroy() {
+        if (channel != null) {
+            channel.close();
+        }
+        workerGroup.shutdownGracefully();
+        bossGroup.shutdownGracefully();
+        log.warn("Netty服务关闭!!");
     }
 }
