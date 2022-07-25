@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PreDestroy;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -24,6 +25,7 @@ import java.util.concurrent.TimeUnit;
 public class NettyClient implements CommandLineRunner {
 
     private Channel channel;
+    private final EventLoopGroup workGroup = new NioEventLoopGroup();
     private final NettyClientInitializer nettyClientInitializer;
 
     @Value("${netty.host}")
@@ -37,10 +39,9 @@ public class NettyClient implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        EventLoopGroup group = new NioEventLoopGroup();
         try {
             Bootstrap bootstrap = new Bootstrap();
-            bootstrap.group(group)
+            bootstrap.group(workGroup)
                     .channel(NioSocketChannel.class)
                     // 设置TCP的长连接，默认的 keepalive的心跳时间是两个小时
                     .option(ChannelOption.SO_KEEPALIVE, true)
@@ -64,5 +65,14 @@ public class NettyClient implements CommandLineRunner {
         } catch (Exception e) {
             log.error("连接Netty服务端异常!! error:{}", e.getMessage());
         }
+    }
+
+    @PreDestroy
+    private void destroy() {
+        if (channel != null) {
+            channel.close();
+        }
+        workGroup.shutdownGracefully();
+        log.warn("Netty连接关闭!!");
     }
 }

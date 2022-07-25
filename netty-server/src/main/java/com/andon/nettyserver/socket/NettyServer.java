@@ -69,7 +69,7 @@ public class NettyServer implements CommandLineRunner {
     }
 
     @PreDestroy
-    public void destroy() {
+    private void destroy() {
         if (channel != null) {
             channel.close();
         }

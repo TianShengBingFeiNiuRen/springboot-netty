@@ -25,7 +25,7 @@ public class NettyClientHandler extends ChannelInboundHandlerAdapter {
      */
     @Override
     public void channelActive(ChannelHandlerContext ctx) {
-        log.info("建立连接!! channelId:{}", ctx.channel().id());
+        log.info("建立Netty连接!!");
         ctx.fireChannelActive();
     }
 
@@ -34,7 +34,7 @@ public class NettyClientHandler extends ChannelInboundHandlerAdapter {
      */
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-        log.warn("关闭连接!! channelId:{}", ctx.channel().id());
+        log.warn("Netty连接关闭!!");
         super.channelInactive(ctx);
     }
 
