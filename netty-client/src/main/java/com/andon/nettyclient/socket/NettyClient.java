@@ -48,10 +48,14 @@ public class NettyClient implements CommandLineRunner {
             Bootstrap bootstrap = new Bootstrap();
             bootstrap.group(workGroup)
                     .channel(NioSocketChannel.class)
-                    // 设置TCP的长连接，默认的 keepalive的心跳时间是两个小时
+                    // 设置TCP长连接，TCP会主动探测空闲连接的有效性
                     .option(ChannelOption.SO_KEEPALIVE, true)
-                    // 将小的数据包包装成更大的帧进行传送，提高网络的负载，即TCP延迟传输
+                    // 禁用Nagle算法，小数据时可以即时传输
                     .option(ChannelOption.TCP_NODELAY, true)
+                    // 发送缓冲区大小
+                    .option(ChannelOption.SO_SNDBUF, 256 * 1024)
+                    // 接收缓冲区大小
+                    .option(ChannelOption.SO_RCVBUF, 256 * 1024)
                     // Netty客户端channel初始化
                     .handler(nettyClientInitializer);
             // 连接服务器ip、端口
