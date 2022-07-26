@@ -108,13 +108,13 @@ public class NettyServerHandler extends ChannelInboundHandlerAdapter {
             IdleStateEvent event = (IdleStateEvent) evt;
             if (event.state() == IdleState.READER_IDLE) {
                 log.warn("Client: 【{}】 READER_IDLE 读超时", socketString);
-                ctx.disconnect();
+                ctx.channel().close();
             } else if (event.state() == IdleState.WRITER_IDLE) {
                 log.warn("Client: 【{}】 WRITER_IDLE 写超时", socketString);
-                ctx.disconnect();
+                ctx.channel().close();
             } else if (event.state() == IdleState.ALL_IDLE) {
-                log.warn("Client: 【{}】 ALL_IDLE 总超时", socketString);
-                ctx.disconnect();
+                log.warn("Client: 【{}】 ALL_IDLE 读/写超时", socketString);
+                ctx.channel().close();
             }
         }
     }

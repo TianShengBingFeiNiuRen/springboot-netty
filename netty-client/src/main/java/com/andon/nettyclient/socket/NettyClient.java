@@ -34,7 +34,12 @@ public class NettyClient implements CommandLineRunner {
     private Integer port;
 
     public void sendMsg(String msg) {
-        channel.writeAndFlush(msg);
+        boolean active = channel.isActive();
+        if (active) {
+            channel.writeAndFlush(msg);
+        } else {
+            log.warn("channel active:{}", false);
+        }
     }
 
     @Override
@@ -50,15 +55,15 @@ public class NettyClient implements CommandLineRunner {
                     // Netty客户端channel初始化
                     .handler(nettyClientInitializer);
             // 连接服务器ip、端口
-            ChannelFuture future = bootstrap.connect(host, port).sync();
+            ChannelFuture future = bootstrap.connect(host, port);
 
             //客户端断线重连逻辑
             future.addListener((ChannelFutureListener) futureListener -> {
                 if (futureListener.isSuccess()) {
                     log.info("连接Netty服务端成功!!");
                 } else {
-                    log.warn("连接Netty服务端失败，进行断线重连!!");
-                    futureListener.channel().eventLoop().schedule((Runnable) this::run, 20, TimeUnit.SECONDS);
+                    log.warn("连接Netty服务端失败，准备30s后进行断线重连!!");
+                    futureListener.channel().eventLoop().schedule((Runnable) this::run, 30, TimeUnit.SECONDS);
                 }
             });
             channel = future.channel();

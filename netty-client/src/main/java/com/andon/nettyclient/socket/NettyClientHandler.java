@@ -1,13 +1,16 @@
 package com.andon.nettyclient.socket;
 
-import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
+
+import javax.annotation.Resource;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author Andon
@@ -19,6 +22,10 @@ import org.springframework.stereotype.Component;
 @Component
 @ChannelHandler.Sharable
 public class NettyClientHandler extends ChannelInboundHandlerAdapter {
+
+    @Lazy
+    @Resource
+    private NettyClient nettyClient;
 
     /**
      * 建立连接时
@@ -33,9 +40,9 @@ public class NettyClientHandler extends ChannelInboundHandlerAdapter {
      * 关闭连接时
      */
     @Override
-    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+    public void channelInactive(ChannelHandlerContext ctx) {
         log.warn("Netty连接关闭!!");
-        super.channelInactive(ctx);
+        reconnect(ctx);
     }
 
     /**
@@ -50,7 +57,7 @@ public class NettyClientHandler extends ChannelInboundHandlerAdapter {
                 // 向服务端发送心跳包
                 String heartbeat = "{\"msg\":\"client heartbeat\"}\n";
                 // 发送心跳消息，并在发送失败时关闭该连接
-                ctx.writeAndFlush(heartbeat).addListener(ChannelFutureListener.CLOSE_ON_FAILURE);
+                ctx.writeAndFlush(heartbeat);
             }
         } else {
             super.userEventTriggered(ctx, evt);
@@ -72,5 +79,10 @@ public class NettyClientHandler extends ChannelInboundHandlerAdapter {
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         // 当出现异常就关闭连接
         ctx.close();
+    }
+
+    private void reconnect(ChannelHandlerContext ctx) {
+        log.info("准备30s后断线重连!!");
+        ctx.channel().eventLoop().schedule(() -> nettyClient.run(), 30, TimeUnit.SECONDS);
     }
 }
