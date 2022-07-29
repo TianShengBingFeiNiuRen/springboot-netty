@@ -2,8 +2,6 @@ package com.andon.nettyclient.socket;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
-import io.netty.handler.codec.DelimiterBasedFrameDecoder;
-import io.netty.handler.codec.Delimiters;
 import io.netty.handler.codec.string.StringDecoder;
 import io.netty.handler.codec.string.StringEncoder;
 import io.netty.handler.timeout.IdleStateHandler;
@@ -31,7 +29,6 @@ public class NettyClientInitializer extends ChannelInitializer<Channel> {
     @Override
     protected void initChannel(Channel channel) {
         channel.pipeline()
-                .addLast(new DelimiterBasedFrameDecoder(8192, Delimiters.lineDelimiter()))
                 .addLast(new StringDecoder(CharsetUtil.UTF_8))
                 .addLast(new StringEncoder(CharsetUtil.UTF_8))
                 .addLast(new IdleStateHandler(0, 5, 0, TimeUnit.SECONDS))

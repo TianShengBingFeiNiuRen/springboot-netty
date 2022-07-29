@@ -1,13 +1,18 @@
 package com.andon.nettyserver.socket;
 
-import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson2.JSONObject;
+import com.alibaba.fastjson2.TypeReference;
+import com.andon.common.dto.NettyPacket;
+import com.andon.common.event.NettyPacketEvent;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelId;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
 import java.net.InetSocketAddress;
@@ -22,11 +27,14 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Slf4j
 @Component
+@RequiredArgsConstructor
 @ChannelHandler.Sharable
 public class NettyServerHandler extends ChannelInboundHandlerAdapter {
 
-    // 管理一个全局map，保存连接进服务端的通道数量
+    // 管理一个全局map，保存连接进服务端的通道
     public static final Map<ChannelId, ChannelHandlerContext> CHANNEL_MAP = new ConcurrentHashMap<>();
+
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     /**
      * 当客户端主动连接服务端，通道活跃后触发
@@ -73,32 +81,17 @@ public class NettyServerHandler extends ChannelInboundHandlerAdapter {
      */
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
-        log.info("接收到客户端【{}】的消息:{}", ctx.channel().id(), msg.toString());
-        StringBuilder sb;
-        Map<String, Object> result;
         try {
             // 报文解析处理
-            sb = new StringBuilder();
-            result = JSONObject.parseObject(msg.toString());
-            sb.append(result).append("解析成功!!").append("\n");
-            // 响应客户端
-            this.channelWrite(ctx.channel().id(), sb);
+            NettyPacket<Object> nettyPacket = JSONObject.parseObject(msg.toString(), new TypeReference<NettyPacket<Object>>() {
+            }.getType());
+            // 发布自定义Netty数据包处理事件
+            applicationEventPublisher.publishEvent(new NettyPacketEvent(ctx.channel().id(), nettyPacket));
         } catch (Exception e) {
-            ctx.writeAndFlush("-1\n");
-            log.error("报文解析失败:{}", e.getMessage());
+            log.error("channelId:【{}】 报文解析失败!! msg:{} error:{}", ctx.channel().id(), msg.toString(), e.getMessage());
+            NettyPacket<String> nettyResponse = NettyPacket.buildRequest("报文解析失败!!");
+            ctx.writeAndFlush(JSONObject.toJSONString(nettyResponse));
         }
-    }
-
-    public void channelWrite(ChannelId channelId, Object msg) {
-        ChannelHandlerContext ctx = CHANNEL_MAP.get(channelId);
-        if (ctx == null) {
-            log.info("通道【{}】不存在!!", channelId);
-            return;
-        }
-        // 将返回客户端的信息写入ctx
-        ctx.write(msg);
-        // 刷新缓存区
-        ctx.flush();
     }
 
     @Override
@@ -108,13 +101,13 @@ public class NettyServerHandler extends ChannelInboundHandlerAdapter {
             IdleStateEvent event = (IdleStateEvent) evt;
             if (event.state() == IdleState.READER_IDLE) {
                 log.warn("Client: 【{}】 READER_IDLE 读超时", socketString);
-                ctx.channel().close();
+                ctx.close();
             } else if (event.state() == IdleState.WRITER_IDLE) {
                 log.warn("Client: 【{}】 WRITER_IDLE 写超时", socketString);
-                ctx.channel().close();
+                ctx.close();
             } else if (event.state() == IdleState.ALL_IDLE) {
                 log.warn("Client: 【{}】 ALL_IDLE 读/写超时", socketString);
-                ctx.channel().close();
+                ctx.close();
             }
         }
     }

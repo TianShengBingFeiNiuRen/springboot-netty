@@ -33,15 +33,6 @@ public class NettyClient implements CommandLineRunner {
     @Value("${netty.port}")
     private Integer port;
 
-    public void sendMsg(String msg) {
-        boolean active = channel.isActive();
-        if (active) {
-            channel.writeAndFlush(msg);
-        } else {
-            log.warn("channel active:{}", false);
-        }
-    }
-
     @Override
     public void run(String... args) {
         try {
@@ -83,5 +74,15 @@ public class NettyClient implements CommandLineRunner {
         }
         workGroup.shutdownGracefully();
         log.warn("Netty连接关闭!!");
+    }
+
+    public boolean sendMsg(String msg) {
+        boolean active = channel.isActive();
+        if (active) {
+            channel.writeAndFlush(msg);
+        } else {
+            log.warn("channel active:{}", false);
+        }
+        return active;
     }
 }
