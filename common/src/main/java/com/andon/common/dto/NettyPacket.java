@@ -76,7 +76,7 @@ public class NettyPacket<T> implements Serializable {
         NettyPacket<Object> nettyResponse = RESPONSE.get(requestId);
         while (nettyResponse == null) {
             long cost = System.currentTimeMillis() - start;
-            if (cost > TimeUnit.MINUTES.toMillis(1)) {
+            if (cost > TimeUnit.MINUTES.toMillis(3)) {
                 throw new RuntimeException("requestId:" + requestId + " 超时，耗时" + cost + "ms");
             }
             TimeUnit.MILLISECONDS.sleep(10);
