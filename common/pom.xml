@@ -7,7 +7,7 @@
         <artifactId>springboot-netty</artifactId>
         <version>0.0.1-SNAPSHOT</version>
     </parent>
-    <artifactId>common</artifactId>
+    <artifactId>netty-common</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>common</name>
     <description>Demo project for Spring Boot</description>

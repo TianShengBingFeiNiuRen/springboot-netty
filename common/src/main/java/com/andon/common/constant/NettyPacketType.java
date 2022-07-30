@@ -15,6 +15,6 @@ public enum NettyPacketType {
     REQUEST("请求", "REQUEST"),
     RESPONSE("响应", "RESPONSE");
 
-    private String name;
-    private String value;
+    private final String name;
+    private final String value;
 }

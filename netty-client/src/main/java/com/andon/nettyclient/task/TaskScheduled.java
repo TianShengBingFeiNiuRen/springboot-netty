@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit;
 @RequiredArgsConstructor
 public class TaskScheduled implements CommandLineRunner {
 
-    private ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(2);
+    private final ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(2);
     private final NettyClient nettyClient;
 
     /**
