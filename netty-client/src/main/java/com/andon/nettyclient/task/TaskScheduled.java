@@ -29,7 +29,7 @@ public class TaskScheduled implements CommandLineRunner {
     private final NettyClient nettyClient;
 
     /**
-     * 模拟业务处理
+     * 模拟服务交互
      */
     @Override
     public void run(String... args) {
