@@ -6,6 +6,8 @@ import lombok.Getter;
 /**
  * @author Andon
  * 2022/7/27
+ * <p>
+ * 自定义Netty数据包类型
  */
 @Getter
 @AllArgsConstructor
